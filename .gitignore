@@ -10,4 +10,5 @@ imdps/benchmarks/*
 *.fdb_latexmk
 *.fls
 *.log
-imdps/experiments/results
+imdps/experiments*
+imdps/julia/intervalmdp.so

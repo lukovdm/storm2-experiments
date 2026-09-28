@@ -100,9 +100,24 @@ endmodule
         self.assertEqual(self.read('.trew'), '3 6 2\n0 0 1 2\n0 0 2 2\n')
         self.assertIn('Rmaxmin=?', self.read('.pctl'))
         self.assertIn('IntervalMDP.jl: unsupported', self.read('.txt'))
+        self.assertFalse(Path(str(self.base) + '.intervalmdp.pctl').exists())
         self.prepared['property']['kind'] = 'reachability-probability'
         self.export()
         self.assertFalse(Path(str(self.base) + '.trew').exists())
+
+    def test_step_rewards_are_exit_times(self):
+        # Reward 1 outside the target {1} and no action rewards count the steps.
+        self.prepared['property']['kind'] = 'expected-reward'
+        self.prepared['state_rewards'] = [1., 0., 1.]
+        self.prepared['states'][0][0] = ([1, 2], [.5, .5], 0.0)
+        self.export()
+        self.assertEqual(self.read('.intervalmdp.pctl'), 'Tmaxmin=? [ F "reach" ]\n')
+        self.assertEqual(self.read('.pctl'), 'Rmaxmin=? [ F "reach" ]\n')
+        self.assertIn('IntervalMDP.jl: supported: expected exit time', self.read('.txt'))
+        # A reward of 1 in an action does not count steps, so the file goes away again.
+        self.prepared['states'][0][0] = ([1, 2], [.5, .5], 1.0)
+        self.export()
+        self.assertFalse(Path(str(self.base) + '.intervalmdp.pctl').exists())
 
     def test_index(self):
         root = Path(self.tmp.name) / 'out'

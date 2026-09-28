@@ -26,7 +26,14 @@ ln -s "$(which julia)" bin/julia
 
 # install IntervalMDP.jl into julia/ and compile it once, so that the runs do not
 bin/julia --project=julia -e 'using Pkg; Pkg.instantiate(); Pkg.precompile()'
+
+# build julia/intervalmdp.so, a sysimage with the solver already compiled
+bin/julia julia/build_sysimage.jl
 ```
+
+Without the sysimage, every IntervalMDP.jl run first compiles the solver, which
+takes seconds and counts towards its model checking time. `scripts/intervalmdp.sh`
+uses the sysimage if it exists; rebuild it whenever `julia/Manifest.toml` changes.
 
 Storm has to be 1.13 or newer, PRISM 4.10.1 or newer.
 
@@ -80,8 +87,16 @@ python3 ../common/postprocess.py --agreement experiments/logs experiments/result
 ```
 
 `run.py` links the model files into the temporary directory of an invocation
-instead of copying them. IntervalMDP.jl is not run on the reward benchmarks, as its
-PRISM importer does not support reachability rewards.
+instead of copying them. IntervalMDP.jl's PRISM importer does not support
+reachability rewards. Rewards that count the steps until the target (reward 1 in
+every other state, no action rewards) are solved as IntervalMDP.jl's expected
+exit time instead; IntervalMDP.jl is not run on the other reward benchmarks.
+
+All three configurations stop value iteration once no value changes by more than
+the absolute precision `1e-6` (`--precision 1e-6 --absolute` for Storm, `-epsilon
+1e-6 -absolute` for PRISM, `--precision 1e-6` for `scripts/intervalmdp.sh`).
+IntervalMDP.jl only supports an absolute criterion; the defaults of Storm and
+PRISM are relative.
 
 There are no exact results for interval MDPs, so with `--agreement` a result is
 compared against those of the other configurations: if at least two and more than
@@ -132,6 +147,7 @@ Each `benchmarks/<width>/<benchmark>` prefix gets:
 | `.lab` | `init`, `deadlock`, `reach`, `avoid` labels |
 | `.pctl` | PRISM / IntervalMDP.jl query with `maxmin` / `minmax` quantification |
 | `.srew`, `.trew` | State and action rewards, only for reward benchmarks |
+| `.intervalmdp.pctl` | IntervalMDP.jl query `Tmaxmin=? [ F "reach" ]` (expected steps until `reach`), only for rewards that count steps |
 | `.txt` | Source, constants, original query, interval width, counts, compatibility |
 
 Nature resolves the intervals adversarially: against a maximising policy it
@@ -154,7 +170,7 @@ To check a single bundle by hand:
 base=benchmarks/absolute-005/consensus.4-4.disagree
 bin/storm --explicit-drn $base.drn --prop $base.storm.props --uncertainty-resolution robust
 bin/prism -importmodel $base.tra,sta,lab $base.pctl    # add ,srew,trew for rewards
-scripts/intervalmdp.sh $base
+scripts/intervalmdp.sh $base                             # --precision EPS, default 1e-6
 ```
 
 ## Provenance

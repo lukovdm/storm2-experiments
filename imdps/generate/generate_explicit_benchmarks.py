@@ -534,8 +534,22 @@ def write_explicit(prepared: dict[str, Any], uncertainty: dict[str, Any], base: 
     path(".pctl").write_text(prism_property + "\n", encoding="utf-8")
     path(".storm.props").write_text(storm_property + "\n", encoding="utf-8")
     source = prepared["source"]
-    compatibility = ("unsupported: IntervalMDP.jl cannot import reachability rewards"
-                     if reward else "supported")
+    # IntervalMDP.jl cannot import reachability rewards, but reward 1 in every state outside
+    # the target and no action rewards count the steps until the target: IntervalMDP.jl's
+    # expected exit time, written as T in .intervalmdp.pctl (see julia/check_intervalmdp.jl).
+    counts_steps = (reward and pathprop == 'F "reach"'
+                    and all(r == 1 or state in prepared["targets"] for state, r in enumerate(prepared["state_rewards"]))
+                    and all(r == 0 for actions in states for _, _, r in actions))
+    if counts_steps:
+        path(".intervalmdp.pctl").write_text(f"T{objective}{opposite_objective}=? [ {pathprop} ]\n", encoding="utf-8")
+    else:
+        path(".intervalmdp.pctl").unlink(missing_ok=True)
+    if not reward:
+        compatibility = "supported"
+    elif counts_steps:
+        compatibility = "supported: expected exit time"
+    else:
+        compatibility = "unsupported: IntervalMDP.jl cannot import reachability rewards"
     path(".txt").write_text(
         f"benchmark: {source['id']}\nsource: {source['program'] or source['jani']}\n"
         f"constants: {source['constants_string']}\noriginal_property: {prepared['property']['formula']}\n"
@@ -582,7 +596,7 @@ def write_index(output_dir: Path, uncertainties: list[dict[str, Any]], benchmark
                 "delta": uncertainty["delta"],
                 "bundle": f"{uncertainty['id']}/{base}",
                 "prism-import": "tra,sta,lab,srew,trew" if rewards else "tra,sta,lab",
-                "intervalmdp": metadata["IntervalMDP.jl"] == "supported",
+                "intervalmdp": metadata["IntervalMDP.jl"].startswith("supported"),
                 "states": int(metadata["states"]),
             }
             reference = shared.get(benchmark_id, {}).get("reference-result")
