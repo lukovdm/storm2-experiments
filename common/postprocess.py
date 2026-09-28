@@ -37,6 +37,10 @@ INDEX_FILE = ROOT / "benchmarks" / "index.json"
 # Relative precision a result has to meet to count as correct.
 GOAL_PRECISION = Fraction(1, 1000)
 
+# With --absolute, GOAL_PRECISION is an absolute precision instead, for tools that only
+# guarantee an absolute error (e.g. value iteration with an absolute stopping criterion).
+ABSOLUTE_PRECISION = False
+
 # Results below this are considered to be zero, so that a tiny absolute deviation
 # from a zero reference result is not reported as an infinite relative error.
 ZERO_THRESHOLD = Fraction(1, 10**8)
@@ -147,6 +151,25 @@ def both_near_zero(reference, result):
     return abs(reference) < ZERO_THRESHOLD and abs(result) < ZERO_THRESHOLD
 
 
+def absolute_difference(reference, result):
+    """The absolute difference between a reference result and a tool result."""
+    if reference is None or result is None:
+        return None
+    if math.isinf(reference) or math.isinf(result):
+        return Fraction(0) if reference == result else math.inf
+    return abs(reference - result)
+
+
+def difference_and_agreement(reference, result):
+    """The difference of a result to a reference, and whether it meets GOAL_PRECISION."""
+    if ABSOLUTE_PRECISION:
+        difference = absolute_difference(reference, result)
+        return difference, difference is not None and difference <= GOAL_PRECISION
+    difference = relative_difference(reference, result)
+    return difference, difference is not None and (difference <= GOAL_PRECISION
+                                                   or both_near_zero(reference, result))
+
+
 def parse_log(path):
     """The contents of one log file, or None if it is not a log written by run.py."""
     text = path.read_text(errors="replace")
@@ -206,10 +229,10 @@ def evaluate(entry, reference):
     result = to_number(entry.get("mcresult"))
     if result is None:
         return "no-result", None
-    difference = relative_difference(reference, result)
+    difference, agrees = difference_and_agreement(reference, result)
     if difference is None:
         return "ok", None          # nothing to compare against
-    if difference > GOAL_PRECISION and not both_near_zero(reference, result):
+    if not agrees:
         return "incorrect", difference
     return "ok", difference
 
@@ -300,8 +323,7 @@ def agreed_references(entries, index):
             results.setdefault(benchmark_id, {}).setdefault(entry["configuration"], []).append(result)
 
     def agree(a, b):
-        difference = relative_difference(a, b)
-        return difference <= GOAL_PRECISION or both_near_zero(a, b)
+        return difference_and_agreement(a, b)[1]
 
     references, disputed = {}, []
     for benchmark_id, configurations in sorted(results.items()):
@@ -469,7 +491,7 @@ def write_log_page(path, configuration, benchmark_id, benchmark, repetitions):
             if data["status"] == "incorrect":
                 difference = (f"<span class=\"bad\">{escape(difference)} &gt; "
                               f"{escape(exponent_format(GOAL_PRECISION))}</span>")
-            rows.append(("relative difference", difference))
+            rows.append(("difference" if ABSOLUTE_PRECISION else "relative difference", difference))
         if "states" in data:
             rows.append(("states", f"{data['states']:,}"))
         if "states-after" in data:
@@ -477,7 +499,7 @@ def write_log_page(path, configuration, benchmark_id, benchmark, repetitions):
         if len(repetitions) > 1:
             parts.append(f"<h2>Repetition {escape(repetition)}</h2>")
         parts.append("<table class=\"meta\">" + "".join(
-            f"<tr><th>{escape(k)}</th><td>{v if k == 'relative difference' else escape(v)}"
+            f"<tr><th>{escape(k)}</th><td>{v if k.endswith('difference') else escape(v)}"
             f"</td></tr>" for k, v in rows)
             + "</table>")
         log = Path(data["log"])
@@ -572,7 +594,12 @@ def main():
     parser.add_argument("--agreement", action="store_true",
                         help="compare the results for a benchmark without a reference result "
                              "against those most configurations agree on")
+    parser.add_argument("--absolute", action="store_true",
+                        help=f"compare results with the absolute precision "
+                             f"{exponent_format(GOAL_PRECISION)} instead of the relative one")
     args = parser.parse_args()
+    global ABSOLUTE_PRECISION
+    ABSOLUTE_PRECISION = args.absolute
 
     logdir, outdir = Path(args.logs), Path(args.out)
     if not logdir.is_dir():

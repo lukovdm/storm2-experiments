@@ -83,7 +83,7 @@ cd imdps
 python3 ../common/generate_invocations.py --out inv.json --timelimit 900 \
     --logdir experiments/logs
 python3 ../common/run.py inv.json
-python3 ../common/postprocess.py --agreement experiments/logs experiments/results
+python3 ../common/postprocess.py --agreement --absolute experiments/logs experiments/results
 ```
 
 `run.py` links the model files into the temporary directory of an invocation
@@ -100,9 +100,10 @@ PRISM are relative.
 
 There are no exact results for interval MDPs, so with `--agreement` a result is
 compared against those of the other configurations: if at least two and more than
-half of the configurations agree on a benchmark (up to the precision of
-`postprocess.py`), the median of their results is its reference, and a result
-differing from it is incorrect. Benchmarks on which the configurations disagree
+half of the configurations agree on a benchmark (up to the precision `1e-3` of
+`postprocess.py`, absolute with `--absolute` like the tools' stopping criterion),
+the median of their results is its reference, and a result differing from it is
+incorrect. Benchmarks on which the configurations disagree
 are listed. A nominal model (width 0), if configured, is instead compared
 against the exact reference result of the original benchmark, which `index.json`
 takes over.
