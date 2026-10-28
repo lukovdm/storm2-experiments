@@ -34,37 +34,37 @@
 \begin{figure}[t]
     \centering
     \ifresults{quantile.csv}{%
-    \begin{minipage}[b]{0.49\linewidth}
-        \centering
-        % PRISM shifted by the benchmarks it does not support (n/a in scatter.csv), 36 in the paper
-        \countplotna{scatter.csv}{prism-ii}%
-        \renewcommand{\quantileplotextras}{\addplot[colprism, densely dashed, forget plot] table [x expr=\thisrow{i}+\plotnacount, y=prism-ii, col sep=comma] {\resultsdir/quantile.csv};}%
-        \quantileplot[width=0.8\linewidth, legend columns=3, legend style={at={(0.35,1.04)}, anchor=south}]{quantile.csv}{%
+        \begin{minipage}[b]{0.49\linewidth}
+            \centering
+            % PRISM shifted by the benchmarks it does not support (n/a in scatter.csv), 36 in the paper
+            \countplotna{scatter.csv}{prism-ii}%
+            \renewcommand{\quantileplotextras}{\addplot[colprism, densely dashed, forget plot] table [x expr=\thisrow{i}+\plotnacount, y=prism-ii, col sep=comma] {\resultsdir/quantile.csv};}%
+            \quantileplot[width=0.8\linewidth, legend columns=3, legend style={at={(0.35,1.04)}, anchor=south}]{quantile.csv}{%
             storm-sound/colstorm/\storm,
             storm-exact/colstormexact/{\storm/\cfgshortstormexact},
             storm-old-sound/colstormold/{\storm/\cfgstormold},
             mcsta-ovi/colmcsta/\mcsta,
             prism-ii/colprism/\prism,
             storm-old-exact/colstormoldexact/{\storm/\cfgstormold/\cfgshortstormexact}}{98}
-    \end{minipage}\hfill
-    \begin{minipage}[b]{0.49\linewidth}
-        \centering
-        \quantileplot[width=0.8\linewidth, legend columns=4, legend style={at={(0.45,1.04)}, anchor=south}]{quantile.csv}{%
-            storm-sound/colstorm/\cfgshortstorm,
-            storm-sound-bisim/colqstormbisim/\cfgshortstormbisim,
-            storm-sound-ddbisim/colstormddbisim/\cfgshortstormddbisim,
-            storm-sound-best/colstormbest/\cfgshortstormbest,
-            storm-hybrid-sound/colstormhybrid/\cfgshortstormhybrid,
-            storm-exact/colstormexact/\cfgshortstormexact,
-            storm-exact-bisim/colqstormexactbisim/\cfgshortstormexactbisim}{98}
-    \end{minipage}
+        \end{minipage}\hfill
+        \begin{minipage}[b]{0.49\linewidth}
+            \centering
+            \quantileplot[width=0.8\linewidth, legend columns=4, legend style={at={(0.45,1.04)}, anchor=south}]{quantile.csv}{%
+                storm-sound/colstorm/\cfgshortstorm,
+                storm-sound-bisim/colqstormbisim/\cfgshortstormbisim,
+                storm-sound-ddbisim/colstormddbisim/\cfgshortstormddbisim,
+                storm-sound-best/colstormbest/\cfgshortstormbest,
+                storm-hybrid-sound/colstormhybrid/\cfgshortstormhybrid,
+                storm-exact/colstormexact/\cfgshortstormexact,
+                storm-exact-bisim/colqstormexactbisim/\cfgshortstormexactbisim}{98}
+        \end{minipage}
 
-    \smallskip
-    \begin{NoHyper}\ref{scatterlegendtrue}\end{NoHyper}\\[-2pt]
-    \scatterplot{scatter.csv}{storm-sound}{\storm}{mcsta-ovi}{\mcsta}{true}\hfill
-    \scatterplot{scatter.csv}{storm-sound}{\storm}{prism-ii}{\prism}{false}\hfill
-    % \scatterplot{scatter.csv}{storm-sound}{\storm}{storm-sound-ddbisim}{\storm/\cfgshortstormddbisim}{false}
-    \scatterplot{scatter.csv}{storm-sound}{\storm}{storm-old-sound}{\storm/\cfgstormold}{false}
+        \smallskip
+        \begin{NoHyper}\ref{scatterlegendtrue}\end{NoHyper}\\[-2pt]
+        \scatterplot{scatter.csv}{storm-sound}{\storm}{mcsta-ovi}{\mcsta}{true}\hfill
+        \scatterplot{scatter.csv}{storm-sound}{\storm}{prism-ii}{\prism}{false}\hfill
+        % \scatterplot{scatter.csv}{storm-sound}{\storm}{storm-sound-ddbisim}{\storm/\cfgshortstormddbisim}{false}
+        \scatterplot{scatter.csv}{storm-sound}{\storm}{storm-old-sound}{\storm/\cfgstormold}{false}
     }
 
     \caption{MDP model checking performance comparison between \storm{}, \mcsta, \prism, and other configurations of \storm. Top: quantile plots indicating how many instances ($x$-axis) are solved within a given time ($y$-axis) for each tool (left) and \storm configuration (right). Bottom: scatter plots for direct runtime comparison. n/a means not supported.}
@@ -74,10 +74,10 @@
 \begin{figure}[t]
     \centering
     \ifresults{scatter.csv}{%
-%    \ref{scatterlegendtrue}\\[-2pt]
-    \statesscatterplot{scatter.csv}{states}{states of the input model}{states-sparse-bisim}{states of the quotient}\hfill
-    \statestimescatterplot{scatter.csv}{states}{states of the input model}{time-sparse-bisim}{time (s)}\hfill
-    \scatterplot{scatter.csv}{storm-exact}{\storm/\cfgshortstormexact}{storm-exact-bisim}{\storm/\cfgshortstormexactbisim}{false}
+        %    \ref{scatterlegendtrue}\\[-2pt]
+        \statesscatterplot{scatter.csv}{states}{states of the input model}{states-sparse-bisim}{states of the quotient}\hfill
+        \statestimescatterplot{scatter.csv}{states}{states of the input model}{time-sparse-bisim}{time (s)}\hfill
+        \scatterplot{scatter.csv}{storm-exact}{\storm/\cfgshortstormexact}{storm-exact-bisim}{\storm/\cfgshortstormexactbisim}{false}
     }
 
     \caption{Bisimulation minimisation in \storm. Left: number of states of the input model ($x$-axis) and of its bisimulation quotient ($y$-axis). Middle: time to compute the quotient ($y$-axis) depending on the number of states of the input model ($x$-axis). Right: scatter plot for direct runtime comparison of \storm/\cfgshortstormexact{} with and without bisimulation.}
@@ -87,8 +87,8 @@
 \begin{figure}[t]
     \centering
     \ifresults{imdp/scatter.csv}{%
-    \imdpscatterplot{imdp/scatter.csv}{storm-default}{\cfgstormdefault}{prism-default}{\cfgprismdefault}{true}
-    \imdpscatterplot{imdp/scatter.csv}{storm-default}{\cfgstormdefault}{intervalmdp-default}{\cfgintervalmdp}{false}
+        \imdpscatterplot{imdp/scatter.csv}{storm-default}{\cfgstormdefault}{prism-default}{\cfgprismdefault}{true}
+        \imdpscatterplot{imdp/scatter.csv}{storm-default}{\cfgstormdefault}{intervalmdp-default}{\cfgintervalmdp}{false}
     }
 
     \caption{\cfgstormdefault, \cfgprismdefault{}, and \cfgintervalmdp{} on interval MDPs with interval width $\eta$.}
@@ -97,13 +97,13 @@
 
 \begin{figure}[t]
     \ifresults{pomdp/plot-series.csv}{%
-    \pomdpplots
+        \pomdpplots
     }
-    \caption{Belief exploration for $19$ POMDPs in \storm with different limits on the number of explored beliefs (size limit $\tau$).
-    Left: runtime.
-    Centre: relative gap between computed bound value and the best computed under-approximation.
-    Right: relative gap between computed bound value and the best computed over-approximation (using belief interpolation).
-    TO and MO indicate timeouts and memory exhaustion.}
+    \caption{Belief exploration in \storm with different limits on the number of explored beliefs (size limit $\tau$).
+        Left: runtime.
+        Centre: relative gap between computed bound value and the best computed under-approximation.
+        Right: relative gap between computed bound value and the best computed over-approximation (using belief interpolation).
+        TO and MO indicate timeouts and memory exhaustion.}
     \label{fig:pomdps}
 \end{figure}
 
