@@ -66,6 +66,7 @@
 %% #4: the number of benchmarks (=xmax)
 %% Further plots without legend entry can be added by locally redefining \quantileplotextras, e.g., within the surrounding minipage.
 \newcommand{\quantileplotextras}{}
+\def\quantilenan{nan}
 \newcommand{\quantileplot}[4][]{%
   \begin{tikzpicture}
     \begin{axis}[
@@ -98,11 +99,25 @@
       legend cell align={left},
       #1,
     ]
+      \pgfplotstableread[col sep=comma]{\resultsdir/#2}\quantiletable
+      \pgfplotstablegetrowsof\quantiletable
+      \edef\quantilerows{\pgfplotsretval}%
       \foreach \col/\colour/\name in {#3}{%
-        \edef\plotline{\noexpand\addplot[\colour]
-          table [x=i, y=\col, col sep=comma] {\resultsdir/#2};
-          \noexpand\addlegendentry{\unexpanded\expandafter{\name}}}%
-        \plotline
+        % A column without any solved benchmark, e.g. of Storm 1.6.2 on ARM, starts
+        % with nan; pgfplots would drop its empty plot but keep its legend entry, which
+        % then labels the next line, so both are left out
+        \ifnum\quantilerows>0
+          \pgfplotstablegetelem{0}{\col}\of\quantiletable
+          \edef\firstvalue{\pgfplotsretval}%
+        \else
+          \let\firstvalue\quantilenan
+        \fi
+        \ifx\firstvalue\quantilenan\else
+          \edef\plotline{\noexpand\addplot[\colour]
+            table [x=i, y=\col, col sep=comma] {\resultsdir/#2};
+            \noexpand\addlegendentry{\unexpanded\expandafter{\name}}}%
+          \plotline
+        \fi
       }
       \quantileplotextras
     \end{axis}
