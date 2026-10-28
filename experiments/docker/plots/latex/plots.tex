@@ -54,6 +54,14 @@
   }%
 }
 
+%% \countbenchmarks{FILE} sets \plotbenchmarks to the number of rows of the csv file
+%% FILE, relative to \resultsdir, e.g. the benchmarks of a run in scatter.csv.
+\newcommand{\countbenchmarks}[1]{%
+  \pgfplotstableread[col sep=comma]{\resultsdir/#1}\benchmarkstable
+  \pgfplotstablegetrowsof{\benchmarkstable}%
+  \xdef\plotbenchmarks{\pgfplotsretval}%
+}
+
 \newlength{\quantileplotheight}
 \setlength{\quantileplotheight}{0.22\linewidth}
 \newlength{\scatterplotsize}
