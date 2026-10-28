@@ -7,10 +7,12 @@
 # only the one of the machine.
 #   scripts/1_load.sh [FILE]
 set -eu
-image=$(realpath "${1:-$(dirname "$0")/../experiments/storm2-experiments.tar.gz}")
+image=${1:-$(dirname "$0")/../experiments/storm2-experiments.tar.gz}
 
 command -v docker >/dev/null || { echo "docker not found, install Docker first" >&2; exit 1; }
 [ -f "$image" ] || { echo "missing $image" >&2; exit 1; }
+# Not realpath, which on macOS fails for a file that does not exist
+image=$(cd "$(dirname "$image")" && pwd)/$(basename "$image")
 
 echo "== $(date): loading $image ($(du -h "$image" | cut -f1)), which takes a few minutes"
 if ! docker load -i "$image"; then

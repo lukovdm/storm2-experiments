@@ -9,8 +9,10 @@
 #   scripts/4_figures.sh DIR [OUT]
 set -eu
 [ $# -ge 1 ] && [ -d "$1" ] || { echo "usage: scripts/4_figures.sh DIR [OUT]" >&2; exit 2; }
-dir=$(realpath "$1")
-out=$(realpath "${2:-$(basename "$dir")-figures.pdf}")
+dir=$(cd "$1" && pwd)
+# Not realpath, which on macOS fails for a file that does not exist yet
+out=${2:-$(basename "$dir")-figures.pdf}
+out=$(cd "$(dirname "$out")" && pwd)/$(basename "$out")
 if [ -e "$out" ]; then
   echo "$out exists already" >&2
   [ -t 0 ] || exit 1

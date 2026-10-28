@@ -6,7 +6,9 @@
 # interval MDPs.
 #   scripts/6_create_artifact.sh [FILE]
 set -eu
-out=$(realpath "${1:-storm2-artifact.zip}")
+# Not realpath, which on macOS fails for a file that does not exist yet
+out=${1:-storm2-artifact.zip}
+out=$(cd "$(dirname "$out")" && pwd)/$(basename "$out")
 cd "$(dirname "$0")/.."
 image=experiments/storm2-experiments.tar.gz
 large="$image experiments/imdp/benchmarks.tar.xz experiments/docker/modest/*.zip"

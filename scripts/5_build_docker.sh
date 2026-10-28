@@ -13,7 +13,8 @@ set -eu
 root=$(cd "$(dirname "$0")/.." && pwd)
 out=$root/experiments/storm2-experiments.tar.gz
 if [ "${1:-}" = "-o" ]; then
-  out=$(realpath "$2")
+  # Not realpath, which on macOS fails for a file that does not exist yet
+  out=$(cd "$(dirname "$2")" && pwd)/$(basename "$2")
   shift 2
 fi
 cd "$root/experiments"
