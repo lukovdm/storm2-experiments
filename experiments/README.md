@@ -1,17 +1,12 @@
 # The experiments of "The Probabilistic Model Checker Storm: Lightning Strikes Twice"
 
-This folder holds the experiments of the artifact and the Docker image they run in; the results of the paper are in [`../results/paper/`](../results/paper/README.md). How to load the image and run the smoke test, the minimal, the representative and the full experiments is described in the [README of the artifact](../README.md), and how to build the image in [ARTIFACT.md](../ARTIFACT.md). This README describes how to set up the host for stable timings, how the experiments can be configured and run individually, and how to run them on your own benchmarks.
+This folder holds the experiments of the artifact and the Docker image they run in; the original results presented in the paper are in [`../results/paper/`](../results/paper/README.md).
+This README describes how to set up the host for stable timings, how the experiments can be configured and run individually, and how to modify the experiments for your own benchmarks.
+How to load the image and run the smoke test, and the minimal, the representative and the full experiments are described in the [README of the artifact](../README.md), and [ARTIFACT.md](../ARTIFACT.md) describes how to build the image.
 
 ## Additional setup
 ### Stable timings (Linux only)
-Set the frequency governor of the host to `performance`
-and disable boost (turbo) before running, and do not run other workloads at
-the same time. With boost, the frequency of a core depends on the temperature
-and on how many other cores are busy, so the runtimes depend on the runs next
-to it. This needs root and `cpupower`, which comes with the package
-`linux-cpupower` on Debian, `linux-tools-common` and `linux-tools-$(uname -r)`
-on Ubuntu, `kernel-tools` on Fedora, and `cpupower` on Arch. The settings are
-lost on a reboot.
+To ensure that timings for the experiemnts are as stable as possible, execute the following commands:
 
 ```bash
 sudo cpupower frequency-set -g performance # set the governor
@@ -19,12 +14,21 @@ sudo cpupower set --turbo-boost 0          # turn off boost
 cpupower frequency-info --policy           # check the governor
 cpupower frequency-info | grep -A2 boost   # check boost
 ```
+This requires root access and the `cpupower` tools, which comes with the package `linux-cpupower` on Debian, `linux-tools-common` and `linux-tools-$(uname -r)` on Ubuntu, `kernel-tools` on Fedora, and `cpupower` on Arch.
 
-Older versions of `cpupower` lack `--turbo-boost`; then disable boost with
+The comamnds set the frequency governor of the host to `performance` and disable boost (turbo) before running.
+The settings are lost on a reboot.
+With boost, the frequency of a core depends on the temperature and on how many other cores are busy, so the runtimes are influenced by simultaneous loads.
+Thus, to ensure the most stable timings, do not run other workloads simultaneously to the experiments.
+
+Older versions of `cpupower` lack `--turbo-boost`; 
+if you have such a version, disable boost with
 `echo 0 | sudo tee /sys/devices/system/cpu/cpufreq/boost`, or on Intel with
 `echo 1 | sudo tee /sys/devices/system/cpu/intel_pstate/no_turbo`.
 
 ## Running individual experiments
+We outline how you can run individual experiments instead of a complete experiment set.
+
 - Start an interactive container with `docker run -it --privileged --cap-drop=all --name storm2 storm2-experiments`.
 - Go to the directory of the experiment, e.g. `cd mdp`, and run the four steps below.
 ```bash
@@ -33,21 +37,29 @@ python3 ../docker/common/run.py inv.json
 python3 ../docker/common/postprocess.py experiments/logs experiments/results
 ../docker/build_figures.sh
 ```
-- Copy the results out of the container from another terminal, e.g. `docker cp storm2:/opt/storm2-experiments/mdp/experiments mdp` and `docker cp storm2:/opt/storm2-experiments/docker/plots/latex/main.pdf .`.
+- Open another terminal and copy the results out of the container , e.g. `docker cp storm2:/opt/storm2-experiments/mdp/experiments mdp` and `docker cp storm2:/opt/storm2-experiments/docker/plots/latex/main.pdf .`.
 
-The image contains this folder in `/opt/storm2-experiments`. For `imdp`, post-process with `postprocess.py --agreement --absolute`, as there are no exact results for interval MDPs and the configurations have to agree on them instead. `build_figures.sh` builds the figures of all experiments with results in `docker/plots/latex/main.pdf`, and writes the csv files they are made from to `docker/plots/latex/data/`.
+The Docker image contains this folder in `/opt/storm2-experiments`.
+For `imdp`, post-process with `postprocess.py --agreement --absolute`, as there are no exact results for interval MDPs and the configurations have to agree on them instead. 
+`build_figures.sh` builds the figures of all experiments with results in `docker/plots/latex/main.pdf`, and writes the csv files they are made from to `docker/plots/latex/data/`.
 
 The scripts in `docker/common/` describe all their options with `--help`. The most important ones:
 - `generate_invocations.py`: `--configs` and `--benchmarks` select configurations and benchmarks by their names in `scripts/configurations.json` and `benchmarks/index.json` of the experiment, `--index index-smoke.json` another set of benchmarks, `--timelimit` the time limit in seconds (default: 900), and `--repetitions` repeats every run.
-- `run.py`: `--memlimit` sets the memory limit in GiB (default: 32), `--parallel` runs as many at the same time as fit into the cores and the memory instead of one at a time, `--jobs N` runs N at the same time, `--cores-per-run` the physical cores of every run (default: 4), and `--ddmem` the memory of the decision diagram libraries in GiB (default: 8). The tools get these through the placeholders `%memlimit`, `%cores`, `%ddmem` and `%ddmem-mb` of `configurations.json`: PRISM's `-javamaxmem` is the memory limit and its `-cuddmaxmem` the decision diagram memory, and Storm's symbolic engines get the cores as `--sylvan:threads` and the decision diagram memory as `--sylvan:maxmem`. With `--bare`, the runs are done one after the other without BenchExec, so without pinning and memory limit and without `--privileged`. Results measured with different `--cores-per-run` are not comparable.
-- `check_results.py experiments/results` lists the runs with an incorrect result or none at all, and for `pomdp` bounds that contradict each other, and fails if there are any. Runs with the same outcome as in the runs of the paper that `benchmarks/expected-outcomes.json` of the experiment lists, e.g. of benchmarks a tool does not support, are only counted as expected; `--expected` lists them.
+- `run.py`: `--memlimit` sets the memory limit in GiB (default: 32), `--parallel` runs as many at the same time as fit into the cores and the memory instead of one at a time, `--jobs N` runs N at the same time, `--cores-per-run` the physical cores of every run (default: 4), and `--ddmem` the memory of the decision diagram libraries in GiB (default: 8).
+The tools get these through the placeholders `%memlimit`, `%cores`, `%ddmem` and `%ddmem-mb` of `configurations.json`.
+PRISM's `-javamaxmem` is the memory limit and its `-cuddmaxmem` the decision diagram memory, and Storm's symbolic engines get the cores as `--sylvan:threads` and the decision diagram memory as `--sylvan:maxmem`.
+With `--bare`, the runs are executed one after the other without BenchExec, so without pinning and memory limit and without `--privileged`.
+Results measured with different `--cores-per-run` are not comparable.
+- `check_results.py experiments/results` lists the runs with an incorrect result or none at all, and for `pomdp` bounds that contradict each other, and fails if there are any.
+- Runs with the same outcome as in the runs of the paper that `benchmarks/expected-outcomes.json` of the experiment lists, e.g. of benchmarks a tool does not support, are only counted as expected; `--expected` lists them.
 
 `run.py` writes one log per run to `experiments/logs/`, and `postprocess.py` writes `results.json` with the status, runtime and result of every run, and `table/index.html`, a table of all runs linking to their logs, to `experiments/results/`; `pomdp` has its own post-processing, see [pomdp/README.md](pomdp/README.md).
 
 Every run gets 4 physical cores because some configurations use several threads: Storm's symbolic engines (`storm-hybrid-sound`, `storm-sound-ddbisim`) run Sylvan with 4 threads, and Java, which runs PRISM, chooses a single-threaded garbage collector when it sees only one core.
 
 ## Running your own benchmarks
-The scripts can run all tool configurations of the MDP experiment `mdp` (Storm 2.0 in its configurations, Storm 1.6.2, mcsta and PRISM) on your own MDPs, and check and compare their results and runtimes like for the benchmarks of the paper. Storm and mcsta read the model as a JANI file, PRISM as a Prism program with a property file; a benchmark with only one of them is only run by the configurations that read it.
+The scripts can run all tool configurations of the MDP experiment `mdp` (Storm 2.0 in its configurations, Storm 1.6.2, mcsta and PRISM) on your own MDPs, and check and compare their results and runtimes like for the benchmarks of the paper.
+Storm and mcsta read the model as a JANI file, PRISM as a PRISM program with a property file; a benchmark with only one of them is only run by the configurations that read it.
 
 1. Put your models and properties into a folder, e.g. `mine/`. Convert a Prism program with its property file into a JANI file with the properties in it with `storm-conv` in the image, without fixing the constants, which the configurations set:
    ```bash
@@ -80,10 +92,12 @@ The scripts can run all tool configurations of the MDP experiment `mdp` (Storm 2
      python3 ../docker/common/check_results.py benchmarks/mine/results;
      chown -R $HOST_UID:$HOST_UID benchmarks/mine'
    ```
-   The options of the scripts select configurations (`--configs`), the time limit (`--timelimit`), the memory limit (`--memlimit`) and how many run at the same time (`--parallel`), see [Running individual experiments](#running-individual-experiments). The last command gives the files that the container writes back to you.
-4. The logs are then in `mine/logs/`, and the results in `mine/results/`: `results.json` with the status, runtime and result of every run, `table/index.html`, a table of all runs linking to their logs, and the csv files of the figures. `check_results.py` lists the runs with a result that differs from the reference result.
+   The options of the scripts select configurations (`--configs`), the time limit (`--timelimit`), the memory limit (`--memlimit`) and how many run at the same time (`--parallel`), see [Running individual experiments](#running-individual-experiments). 
+   The last command gives the files that the container writes back to you.
+4. The resulting logs and the result data are located in `mine/logs/` and `mine/results/`, respectively. Result data is given in `results.json`, containing the status, runtime and result of every run; `table/index.html` containing a browsable table of all runs linking to their logs; CSV files used to generate the figures.
+`check_results.py` lists the runs with a result that differs from the reference result.
 
-For the consensus example above, all 10 configurations give 0.40627 (exactly 852021/2097152). This works for the MDP experiment only: the post-processing of the interval MDP and POMDP experiments only knows the benchmarks of their own `index.json`.
+For the consensus example above, all 10 configurations give 0.40627 (exactly 852021/2097152). This works for the MDP experiment only: the post-processing of the interval MDP and POMDP experiments only know the benchmarks of their own `index.json`.
 
 ## Contents
 
