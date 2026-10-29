@@ -2,7 +2,7 @@
 
 This artifact contains sources and precompiled binaries of **Storm 2.0** and **stormpy 2.0**, all benchmarks and scripts of the experiments of Sec. 8 of the tool paper "The Probabilistic Model Checker Storm: Lightning Strikes Twice", and the logs and results of the runs shown in the paper. 
 It reproduces Figures 6, 7, 8, and 9.
-In addition, it contains **TODO** FILL WITH MODEST/PRISM INFO
+In addition, it contains Modest 3.1.315, PRISM 4.10.1 and IntervalMDP.jl 0.7.
 All tools and experiments run in the provided Docker images.
 
 We apply for the Available, Functional and Reusable badges.
